@@ -28,7 +28,7 @@ def create_bot(cookie_file):
     intents.voice_states = True
     
     # Create bot with command prefix
-    bot = commands.Bot(command_prefix="!", intents=intents)
+    bot = commands.Bot(command_prefix="Joper ", intents=intents)
     bot_instance = bot
     
     # Store cookie file path in bot
