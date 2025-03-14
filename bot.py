@@ -42,7 +42,7 @@ def load_opus_library():
 
         # Check if opus is loaded
         if discord.opus.is_loaded():
-            logger.info(f"Opus library loaded successfully: {discord.opus._lib.libopus_handle}")
+            logger.info("Opus library loaded successfully")
             return True
         else:
             logger.error("Failed to load opus library, audio may not work correctly")
