@@ -24,11 +24,18 @@ except ImportError as e:
 # Create a filter to remove gunicorn signal handling messages
 class GunicornFilter(logging.Filter):
     def filter(self, record):
-        if record.name.startswith('gunicorn'):
-            if 'Handling signal: winch' in getattr(record, 'getMessage', lambda: '')():
+        # Filter all winch signal messages by checking the message content
+        try:
+            message = record.getMessage()
+            if 'Handling signal: winch' in message:
                 return False
-            if record.levelno < logging.WARNING:
-                return False
+        except:
+            pass
+            
+        # Filter all low-level gunicorn logs
+        if getattr(record, 'name', '').startswith('gunicorn') and record.levelno < logging.WARNING:
+            return False
+            
         return True
 
 # Set up root logger
@@ -37,12 +44,20 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
-# Apply filter to root logger
-root_logger = logging.getLogger()
-root_logger.addFilter(GunicornFilter())
-
 # Set gunicorn logger to WARNING to reduce other noise
-logging.getLogger("gunicorn").setLevel(logging.WARNING)
+gunicorn_logger = logging.getLogger("gunicorn")
+gunicorn_logger.setLevel(logging.WARNING)
+
+# Apply filter to gunicorn logger specifically
+for handler in logging.root.handlers:
+    handler.addFilter(GunicornFilter())
+    
+# Also filter the gunicorn.error logger which might be separate
+gunicorn_error = logging.getLogger("gunicorn.error")
+gunicorn_error.addFilter(GunicornFilter())
+
+# Apply to stdout/stderr logger
+logging.getLogger("gunicorn.access").addFilter(GunicornFilter())
 
 # Create Flask app
 app = Flask(__name__)

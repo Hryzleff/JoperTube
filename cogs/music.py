@@ -112,13 +112,41 @@ class Music(commands.Cog):
             # Add audio filter for volume control
             audio_source = discord.PCMVolumeTransformer(audio_source, volume=0.5)
             
-            # Play the audio
-            voice_client.play(
-                audio_source, 
-                after=lambda e: asyncio.run_coroutine_threadsafe(
-                    self.play_next(ctx, e), self.bot.loop
+            # Play the audio with Opus error handling
+            try:
+                voice_client.play(
+                    audio_source, 
+                    after=lambda e: asyncio.run_coroutine_threadsafe(
+                        self.play_next(ctx, e), self.bot.loop
+                    )
                 )
-            )
+                logger.info(f"Started playing: {title}")
+            except discord.opus.OpusNotLoaded:
+                # Handle Opus not loaded error
+                logger.warning("Opus library not loaded - using fallback mode")
+                await ctx.send("⚠️ Voice encoding library (Opus) not available - using fallback mode")
+                
+                # Try to use the player without Opus encoder by forcing the voice client to proceed
+                try:
+                    # Check if discord.py version allows us to bypass opus check
+                    from discord import voice_client as vc
+                    voice_client._connected = True
+                    voice_client.encoder = None
+                    voice_client._player = None
+                    
+                    # Try to play again
+                    voice_client.play(
+                        audio_source, 
+                        after=lambda e: asyncio.run_coroutine_threadsafe(
+                            self.play_next(ctx, e), self.bot.loop
+                        )
+                    )
+                    logger.info("Fallback player activated successfully")
+                except Exception as fallback_error:
+                    # If fallback fails too, notify user
+                    logger.error(f"Fallback playback failed: {fallback_error}")
+                    await ctx.send("❌ Fallback playback mode failed. Voice features are unavailable.")
+                    raise RuntimeError("Voice playback unavailable - Opus library missing and fallback failed")
             
         except Exception as e:
             import traceback
@@ -129,7 +157,9 @@ class Music(commands.Cog):
             logger.error(traceback.format_exc())
             
             # Provide user-friendly error message
-            if "executable" in error_message.lower():
+            if "opus" in error_message.lower():
+                await ctx.send("❌ Voice encoding error: Opus library not available. Please contact the bot administrator.")
+            elif "executable" in error_message.lower():
                 await ctx.send("❌ FFmpeg error: Could not access FFmpeg. Please contact the bot administrator.")
             elif "403" in error_message or "forbidden" in error_message.lower():
                 await ctx.send("❌ YouTube error: This video is forbidden or age-restricted. Check cookie file.")
