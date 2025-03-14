@@ -3,17 +3,41 @@ import os
 import logging
 import threading
 import time
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
-from bot import create_bot, bot_instance
+import sys
+
+# Add proper flask import statements
+try:
+    from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
+except ImportError:
+    logging.error("Failed to import Flask. Make sure it's installed.")
+    sys.exit(1)
+
+# Import bot modules with error handling
+try:
+    from bot import create_bot, bot_instance
+except ImportError as e:
+    logging.error(f"Failed to import bot modules: {e}")
+    sys.exit(1)
 
 # Configure logging
+
+# Create a filter to remove gunicorn signal handling messages
+class GunicornFilter(logging.Filter):
+    def filter(self, record):
+        return not (record.name == 'gunicorn.error' and 'Handling signal: winch' in record.getMessage())
+
+# Set up root logger
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
-# Filter out the "handling signal: winch" messages from gunicorn
-logging.getLogger("gunicorn.error").setLevel(logging.ERROR)
+# Apply filter to root logger
+root_logger = logging.getLogger()
+root_logger.addFilter(GunicornFilter())
+
+# Set gunicorn logger to WARNING to reduce other noise
+logging.getLogger("gunicorn").setLevel(logging.WARNING)
 
 # Create Flask app
 app = Flask(__name__)
@@ -95,17 +119,37 @@ def start_bot():
 @app.route('/stop_bot', methods=['POST'])
 def stop_bot():
     """Stop the Discord bot"""
-    global bot_running, bot_status
+    global bot_running, bot_status, bot_error
     
     if bot_running and bot_instance:
         try:
-            bot_instance.close()
+            logging.info("Attempting to stop Discord bot...")
+            # Close the bot instance
+            if hasattr(bot_instance, 'close') and callable(bot_instance.close):
+                bot_instance.close()
+            
+            # Update status
             bot_running = False
             bot_status = "Stopped"
+            bot_error = None
+            
+            # Log and notify
+            logging.info("Discord bot stopped successfully")
             flash("Bot stopped successfully", "success")
         except Exception as e:
-            flash(f"Error stopping bot: {e}", "danger")
+            # Log detailed error
+            import traceback
+            error_msg = f"Error stopping bot: {e}"
+            logging.error(error_msg)
+            logging.error(traceback.format_exc())
+            
+            # Update status and notify
+            bot_error = str(e)
+            bot_status = "Error stopping"
+            flash(error_msg, "danger")
     else:
+        # Bot is not running
+        logging.warning("Attempted to stop bot, but it is not running")
         flash("Bot is not running", "warning")
     
     return redirect(url_for('index'))
