@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Discord Music Bot - Control Panel{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h2 class="card-title mb-0"><i class="fas fa-robot me-2"></i>Bot Control Panel</h2>
+            </div>
+            <div class="card-body">
+                <!-- Bot Status -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h3 class="mb-3">Status</h3>
+                        <div class="d-flex align-items-center">
+                            <span class="me-3">Current Status:</span>
+                            {% if bot_running %}
+                                <span class="badge bg-success bot-status-badge">ONLINE</span>
+                            {% elif bot_status == "Error" %}
+                                <span class="badge bg-danger bot-status-badge">ERROR</span>
+                            {% else %}
+                                <span class="badge bg-secondary bot-status-badge">OFFLINE</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if bot_error %}
+                        <div class="alert alert-danger mt-3">
+                            <strong>Error:</strong> {{ bot_error }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Bot Controls -->
+                <div class="row bot-controls">
+                    <div class="col-12">
+                        <h3 class="mb-3">Controls</h3>
+                        <div class="d-flex gap-2">
+                            <form action="{{ url_for('start_bot') }}" method="post">
+                                <button type="submit" class="btn btn-success" {% if bot_running %}disabled{% endif %}>
+                                    <i class="fas fa-play me-2"></i>Start Bot
+                                </button>
+                            </form>
+                            
+                            <form action="{{ url_for('stop_bot') }}" method="post">
+                                <button type="submit" class="btn btn-danger" {% if not bot_running %}disabled{% endif %}>
+                                    <i class="fas fa-stop me-2"></i>Stop Bot
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bot Information -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h3 class="mb-3">Bot Information</h3>
+                        <div class="card bg-dark">
+                            <div class="card-body">
+                                <p><strong>Command Prefix:</strong> !</p>
+                                
+                                <h4 class="mt-4">Available Commands:</h4>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item bg-dark">
+                                        <code>!play &lt;url or search query&gt;</code> - Play a song from YouTube
+                                    </li>
+                                    <li class="list-group-item bg-dark">
+                                        <code>!pause</code> - Pause the current song
+                                    </li>
+                                    <li class="list-group-item bg-dark">
+                                        <code>!resume</code> - Resume the paused song
+                                    </li>
+                                    <li class="list-group-item bg-dark">
+                                        <code>!skip</code> - Skip to the next song in the queue
+                                    </li>
+                                    <li class="list-group-item bg-dark">
+                                        <code>!stop</code> - Stop playback and clear the queue
+                                    </li>
+                                    <li class="list-group-item bg-dark">
+                                        <code>!queue</code> - Show the current queue
+                                    </li>
+                                    <li class="list-group-item bg-dark">
+                                        <code>!volume &lt;0-100&gt;</code> - Set the volume
+                                    </li>
+                                    <li class="list-group-item bg-dark">
+                                        <code>!join</code> - Make the bot join your voice channel
+                                    </li>
+                                    <li class="list-group-item bg-dark">
+                                        <code>!leave</code> - Make the bot leave the voice channel
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cookie File -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h3 class="mb-3">YouTube Cookies</h3>
+                        <p>
+                            For playing age-restricted videos, you need to upload a cookies.txt file from YouTube.
+                        </p>
+                        <a href="{{ url_for('upload_cookies') }}" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Upload Cookie File
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh bot status every 5 seconds
+    setInterval(function() {
+        fetch('/bot_status')
+            .then(response => response.json())
+            .then(data => {
+                const statusBadge = document.querySelector('.bot-status-badge');
+                if (data.running) {
+                    statusBadge.className = 'badge bg-success bot-status-badge';
+                    statusBadge.textContent = 'ONLINE';
+                    document.querySelector('.btn-success').disabled = true;
+                    document.querySelector('.btn-danger').disabled = false;
+                } else if (data.status === 'Error') {
+                    statusBadge.className = 'badge bg-danger bot-status-badge';
+                    statusBadge.textContent = 'ERROR';
+                    document.querySelector('.btn-success').disabled = false;
+                    document.querySelector('.btn-danger').disabled = true;
+                } else {
+                    statusBadge.className = 'badge bg-secondary bot-status-badge';
+                    statusBadge.textContent = 'OFFLINE';
+                    document.querySelector('.btn-success').disabled = false;
+                    document.querySelector('.btn-danger').disabled = true;
+                }
+            })
+            .catch(error => console.error('Error fetching status:', error));
+    }, 5000);
+</script>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Upload YouTube Cookies{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h2 class="card-title mb-0"><i class="fas fa-cookie-bite me-2"></i>Upload YouTube Cookies</h2>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">
+                    Upload your <code>cookies.txt</code> file from YouTube to enable playing age-restricted videos.
+                </p>
+
+                <div class="card bg-dark mb-4">
+                    <div class="card-body">
+                        <h4 class="mb-3">How to get cookies.txt</h4>
+                        <ol>
+                            <li>Install a browser extension like "Get cookies.txt" for Chrome or Firefox</li>
+                            <li>Log in to YouTube with an account that can view age-restricted content</li>
+                            <li>Use the extension to export cookies for youtube.com</li>
+                            <li>Save the file and upload it below</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <form method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="cookie_file" class="form-label">Cookie File</label>
+                        <input class="form-control" type="file" id="cookie_file" name="cookie_file" accept=".txt">
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Upload
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
