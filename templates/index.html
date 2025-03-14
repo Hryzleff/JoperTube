@@ -33,22 +33,40 @@
                     </div>
                 </div>
 
-                <!-- Bot Controls -->
-                <div class="row bot-controls">
+                <!-- Bot Info Note -->
+                <div class="row">
                     <div class="col-12">
-                        <h3 class="mb-3">Controls</h3>
-                        <div class="d-flex gap-2">
-                            <form action="{{ url_for('start_bot') }}" method="post">
-                                <button type="submit" class="btn btn-success" {% if bot_running %}disabled{% endif %}>
-                                    <i class="fas fa-play me-2"></i>Start Bot
-                                </button>
-                            </form>
-                            
-                            <form action="{{ url_for('stop_bot') }}" method="post">
-                                <button type="submit" class="btn btn-danger" {% if not bot_running %}disabled{% endif %}>
-                                    <i class="fas fa-stop me-2"></i>Stop Bot
-                                </button>
-                            </form>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Bot starts automatically when the application is running.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Now Playing -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h3 class="mb-3">Now Playing</h3>
+                        <div id="now-playing-card" class="card bg-dark mb-4">
+                            <div class="card-body">
+                                <div id="no-song-playing" class="text-center py-4">
+                                    <i class="fas fa-music fa-3x mb-3 text-muted"></i>
+                                    <p class="mb-0 text-muted">No song is currently playing</p>
+                                </div>
+                                <div id="song-playing" class="d-none">
+                                    <h4 id="current-song-title" class="text-truncate"></h4>
+                                    <p id="current-server" class="text-muted"></p>
+                                    
+                                    <div class="progress mt-3 mb-2">
+                                        <div id="song-progress-bar" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between">
+                                        <small id="current-time">0:00</small>
+                                        <small id="duration-time">0:00</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -116,8 +134,78 @@
 
 {% block scripts %}
 <script>
-    // Auto-refresh bot status every 5 seconds
+    // Format time in mm:ss or hh:mm:ss format
+    function formatTime(seconds) {
+        if (!seconds && seconds !== 0) return '0:00';
+        
+        seconds = Math.floor(seconds);
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        } else {
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+    }
+    
+    // Update the Now Playing section
+    function updateNowPlaying() {
+        fetch('/playback_info')
+            .then(response => response.json())
+            .then(data => {
+                const noSongElement = document.getElementById('no-song-playing');
+                const songElement = document.getElementById('song-playing');
+                const titleElement = document.getElementById('current-song-title');
+                const serverElement = document.getElementById('current-server');
+                const progressBar = document.getElementById('song-progress-bar');
+                const currentTimeElement = document.getElementById('current-time');
+                const durationTimeElement = document.getElementById('duration-time');
+                
+                if (data.title) {
+                    // A song is playing
+                    noSongElement.classList.add('d-none');
+                    songElement.classList.remove('d-none');
+                    
+                    // Set title and server
+                    titleElement.textContent = data.title;
+                    serverElement.textContent = data.guild_name ? `Playing on: ${data.guild_name}` : '';
+                    
+                    // Update progress bar
+                    progressBar.style.width = `${data.progress_percent}%`;
+                    
+                    // Update time display
+                    const elapsed = data.duration - data.remaining;
+                    currentTimeElement.textContent = formatTime(elapsed);
+                    durationTimeElement.textContent = formatTime(data.duration);
+                    
+                    // Add time left info
+                    const timeLeftElement = document.getElementById('time-left') || document.createElement('div');
+                    timeLeftElement.id = 'time-left';
+                    timeLeftElement.className = 'mt-2 text-center fs-5';
+                    
+                    if (data.remaining) {
+                        timeLeftElement.innerHTML = `<i class="fas fa-clock me-2"></i>Time remaining: <strong>${formatTime(data.remaining)}</strong>`;
+                    } else {
+                        timeLeftElement.innerHTML = '';
+                    }
+                    
+                    if (!document.getElementById('time-left')) {
+                        songElement.appendChild(timeLeftElement);
+                    }
+                } else {
+                    // No song is playing
+                    noSongElement.classList.remove('d-none');
+                    songElement.classList.add('d-none');
+                }
+            })
+            .catch(error => console.error('Error fetching playback info:', error));
+    }
+    
+    // Auto-refresh bot status and now playing every 1 second
     setInterval(function() {
+        // Update Bot Status
         fetch('/bot_status')
             .then(response => response.json())
             .then(data => {
@@ -125,21 +213,18 @@
                 if (data.running) {
                     statusBadge.className = 'badge bg-success bot-status-badge';
                     statusBadge.textContent = 'ONLINE';
-                    document.querySelector('.btn-success').disabled = true;
-                    document.querySelector('.btn-danger').disabled = false;
                 } else if (data.status === 'Error') {
                     statusBadge.className = 'badge bg-danger bot-status-badge';
                     statusBadge.textContent = 'ERROR';
-                    document.querySelector('.btn-success').disabled = false;
-                    document.querySelector('.btn-danger').disabled = true;
                 } else {
                     statusBadge.className = 'badge bg-secondary bot-status-badge';
                     statusBadge.textContent = 'OFFLINE';
-                    document.querySelector('.btn-success').disabled = false;
-                    document.querySelector('.btn-danger').disabled = true;
                 }
             })
             .catch(error => console.error('Error fetching status:', error));
-    }, 5000);
+        
+        // Update Now Playing
+        updateNowPlaying();
+    }, 1000);
 </script>
 {% endblock %}

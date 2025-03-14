@@ -113,6 +113,20 @@ def run_bot():
         logging.error(f"Error message: {e}")
         logging.error(traceback.format_exc())
 
+# Start the bot automatically when the app starts
+def start_bot_automatically():
+    global bot_thread, bot_running
+    
+    if not bot_running:
+        logging.info("Starting Discord bot automatically")
+        bot_thread = threading.Thread(target=run_bot)
+        bot_thread.daemon = True
+        bot_thread.start()
+
+# Auto-start the bot immediately when the app is loaded
+logging.info("Starting Discord bot automatically on app startup")
+start_bot_automatically()
+
 @app.route('/')
 def index():
     """Main page of the web interface"""
