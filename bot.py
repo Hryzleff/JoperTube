@@ -1,5 +1,7 @@
 # Bot initialization and configuration
 import os
+import sys
+import ctypes
 import discord
 from discord.ext import commands
 import logging
@@ -13,6 +15,57 @@ logger.setLevel(logging.INFO)
 # Global bot instance that can be accessed by the web interface
 bot_instance = None
 
+def load_opus_library():
+    """
+    Load the opus library for voice support in Discord.py
+    
+    Returns:
+        bool: True if opus was loaded successfully, False otherwise
+    """
+    try:
+        # Try to find opus library on the system
+        if not discord.opus.is_loaded():
+            # Try various paths where opus might be installed
+            opus_paths = [
+                'libopus.so.0',  # Linux
+                'libopus.0.dylib',  # macOS
+                'opus.dll',  # Windows
+                '/nix/store/*/libopus.so*',  # Replit Nix
+                '/usr/lib*/libopus.so*',
+                '/usr/local/lib*/libopus.so*'
+            ]
+            
+            # Find the right opus library
+            for path in opus_paths:
+                try:
+                    # For glob pattern paths
+                    if '*' in path:
+                        import glob
+                        libs = glob.glob(path)
+                        if libs:
+                            discord.opus.load_opus(libs[0])
+                            logger.info(f"Loaded opus from: {libs[0]}")
+                            break
+                    # For direct paths
+                    else:
+                        discord.opus.load_opus(path)
+                        logger.info(f"Loaded opus from: {path}")
+                        break
+                except (OSError, ctypes.ArgumentError):
+                    continue
+                
+        # Check if opus is loaded
+        if discord.opus.is_loaded():
+            logger.info(f"Opus library loaded successfully: {discord.opus._lib.libopus_handle}")
+            return True
+        else:
+            logger.error("Failed to load opus library, audio may not work correctly")
+            return False
+    except Exception as e:
+        logger.error(f"Error loading opus: {e}")
+        logger.error(traceback.format_exc())
+        return False
+
 def create_bot(cookie_file):
     """
     Create and configure the Discord bot
@@ -24,6 +77,10 @@ def create_bot(cookie_file):
         commands.Bot: Configured Discord bot
     """
     global bot_instance
+    
+    # Load opus library for voice support
+    opus_loaded = load_opus_library()
+    logger.info(f"Opus library loaded: {opus_loaded}")
     
     # Set intents - enable all available intents for full functionality
     intents = discord.Intents.all()

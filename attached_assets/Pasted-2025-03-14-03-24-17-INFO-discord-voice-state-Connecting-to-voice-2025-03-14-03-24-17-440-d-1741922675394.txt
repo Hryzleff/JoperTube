@@ -1,0 +1,50 @@
+2025-03-14 03:24:17 INFO     discord.voice_state Connecting to voice...
+2025-03-14 03:24:17,440 - discord.voice_state - INFO - Connecting to voice...
+2025-03-14 03:24:17 INFO     discord.voice_state Starting voice handshake... (connection attempt 1)
+2025-03-14 03:24:17,440 - discord.voice_state - INFO - Starting voice handshake... (connection attempt 1)
+2025-03-14 03:24:17 INFO     discord.voice_state Voice handshake complete. Endpoint found: rotterdam9105.discord.media
+2025-03-14 03:24:17,567 - discord.voice_state - INFO - Voice handshake complete. Endpoint found: rotterdam9105.discord.media
+2025-03-14 03:24:18 INFO     discord.voice_state Voice connection complete.
+2025-03-14 03:24:18,315 - discord.voice_state - INFO - Voice connection complete.
+2025-03-14 03:24:21,088 - cogs.music - ERROR - Error playing song: 
+2025-03-14 03:24:21,089 - cogs.music - ERROR - Traceback (most recent call last):
+  File "/home/runner/workspace/cogs/music.py", line 116, in play_song
+    voice_client.play(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/discord/voice_client.py", line 506, in play
+    self.encoder = opus.Encoder(
+                   ^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/discord/opus.py", line 359, in __init__
+    _OpusStruct.get_opus_version()  # lazy loads the opus library
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/discord/opus.py", line 332, in get_opus_version
+    raise OpusNotLoaded()
+discord.opus.OpusNotLoaded
+
+2025-03-14 03:24:24,050 - cogs.music - ERROR - Error playing song: 
+2025-03-14 03:24:24,050 - cogs.music - ERROR - Traceback (most recent call last):
+  File "/home/runner/workspace/cogs/music.py", line 116, in play_song
+    voice_client.play(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/discord/voice_client.py", line 506, in play
+    self.encoder = opus.Encoder(
+                   ^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/discord/opus.py", line 359, in __init__
+    _OpusStruct.get_opus_version()  # lazy loads the opus library
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/discord/opus.py", line 332, in get_opus_version
+    raise OpusNotLoaded()
+discord.opus.OpusNotLoaded
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/runner/workspace/cogs/music.py", line 116, in play_song
+    voice_client.play(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/discord/voice_client.py", line 506, in play
+    self.encoder = opus.Encoder(
+                   ^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/discord/opus.py", line 359, in __init__
+    _OpusStruct.get_opus_version()  # lazy loads the opus library
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/discord/opus.py", line 332, in get_opus_version
+    raise OpusNotLoaded()
+discord.opus.OpusNotLoaded
