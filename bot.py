@@ -76,7 +76,7 @@ def create_bot(cookie_file):
     logger.info(f"Using cookie file at: {cookie_file}")
 
     # Create bot with command prefix
-    bot = commands.Bot(command_prefix="Joper ", intents=intents)
+    bot = commands.Bot(command_prefix="Joper", intents=intents)
     bot_instance = bot
 
     # Store cookie file path in bot

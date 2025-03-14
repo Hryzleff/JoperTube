@@ -8,7 +8,7 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 YT_COOKIE_FILE = os.getenv("YT_COOKIE_FILE", "cookies.txt")
 
 # Command prefix
-COMMAND_PREFIX = "!"
+COMMAND_PREFIX = "Joper"
 
 # Default volume (0.0 to 1.0)
 DEFAULT_VOLUME = 0.5
