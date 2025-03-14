@@ -91,9 +91,7 @@ class Music(commands.Cog):
         
         try:
             # Get audio source from YouTube
-            await ctx.send(f"🔍 Searching for: {url}")
             stream_url, title, duration = await self.downloader.get_audio_info(url)
-            
             await ctx.send(f"🎵 Now playing: **{title}**")
             
             # Use explicit ffmpeg path and add more options for better compatibility
