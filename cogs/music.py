@@ -218,12 +218,13 @@ class Music(commands.Cog):
             url = query
         else:
             # Search for the song on YouTube
-            await ctx.send(f"🔍 Searching for: {query}")
+            search_msg = await ctx.send("🔍 Searching...")
             try:
                 url = await self.downloader.search_video(query)
                 if not url:
                     await ctx.send("❌ No results found!")
                     return
+                await search_msg.delete()
             except Exception as e:
                 await ctx.send(f"❌ Error searching for video: {e}")
                 return
