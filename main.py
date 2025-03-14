@@ -12,6 +12,9 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
+# Filter out the "handling signal: winch" messages from gunicorn
+logging.getLogger("gunicorn.error").setLevel(logging.ERROR)
+
 # Create Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "discord-music-bot-secret")
@@ -35,6 +38,8 @@ def run_bot():
             bot_running = False
             logging.error(bot_error)
             return
+            
+        logging.info(f"Discord token found, starting bot with prefix 'Joper '")
         
         # Get cookie file path from environment variables or use default
         cookie_file = os.getenv("YT_COOKIE_FILE", "cookies.txt")
@@ -43,12 +48,17 @@ def run_bot():
         bot = create_bot(cookie_file)
         bot_status = "Running"
         bot_running = True
+        logging.info("Discord bot created, attempting to connect to Discord...")
         bot.run(token)
     except Exception as e:
         bot_error = str(e)
         bot_status = "Error"
         bot_running = False
-        logging.error(f"Bot error: {e}")
+        # Print detailed error information
+        import traceback
+        logging.error("Discord bot error:")
+        logging.error(f"Error message: {e}")
+        logging.error(traceback.format_exc())
 
 @app.route('/')
 def index():
