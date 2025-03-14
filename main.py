@@ -24,7 +24,12 @@ except ImportError as e:
 # Create a filter to remove gunicorn signal handling messages
 class GunicornFilter(logging.Filter):
     def filter(self, record):
-        return not (record.name == 'gunicorn.error' and 'Handling signal: winch' in record.getMessage())
+        if record.name.startswith('gunicorn'):
+            if 'Handling signal: winch' in getattr(record, 'getMessage', lambda: '')():
+                return False
+            if record.levelno < logging.WARNING:
+                return False
+        return True
 
 # Set up root logger
 logging.basicConfig(

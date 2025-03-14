@@ -48,9 +48,17 @@ class Music(commands.Cog):
         guild_id = ctx.guild.id
         queue = self.get_queue(guild_id)
         
+        # Handle any errors from previous playback
         if error:
-            logger.error(f"Error playing audio: {error}")
-            await ctx.send(f"Error playing audio: {error}")
+            error_message = str(error) if error else "An unknown error occurred"
+            if not error_message.strip():
+                error_message = "Empty error message, likely an FFmpeg issue"
+                
+            logger.error(f"Error playing audio: {error_message}")
+            try:
+                await ctx.send(f"⚠️ Error playing audio: {error_message}")
+            except Exception as send_error:
+                logger.error(f"Couldn't send error message: {send_error}")
         
         # Check if there are more songs in the queue
         if not queue.is_empty():
@@ -88,10 +96,17 @@ class Music(commands.Cog):
             
             await ctx.send(f"🎵 Now playing: **{title}**")
             
+            # Use explicit ffmpeg path and add more options for better compatibility
+            ffmpeg_path = "/nix/store/jfybfbnknyiwggcrhi4v9rsx5g4hksvf-ffmpeg-full-6.1.1-bin/bin/ffmpeg"
+            before_options = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -analyzeduration 0 -loglevel panic"
+            ffmpeg_options = "-vn -af dynaudnorm=f=200"
+            
             # Create FFmpeg audio source
             audio_source = discord.FFmpegPCMAudio(
                 stream_url,
-                before_options="-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
+                executable=ffmpeg_path,
+                before_options=before_options,
+                options=ffmpeg_options
             )
             
             # Add audio filter for volume control
@@ -106,8 +121,24 @@ class Music(commands.Cog):
             )
             
         except Exception as e:
-            logger.error(f"Error playing song: {e}")
-            await ctx.send(f"❌ Error playing song: {e}")
+            import traceback
+            error_message = str(e)
+            
+            # Log detailed error information
+            logger.error(f"Error playing song: {error_message}")
+            logger.error(traceback.format_exc())
+            
+            # Provide user-friendly error message
+            if "executable" in error_message.lower():
+                await ctx.send("❌ FFmpeg error: Could not access FFmpeg. Please contact the bot administrator.")
+            elif "403" in error_message or "forbidden" in error_message.lower():
+                await ctx.send("❌ YouTube error: This video is forbidden or age-restricted. Check cookie file.")
+            elif "not available" in error_message.lower():
+                await ctx.send("❌ YouTube error: This video is not available in your region or has been removed.")
+            else:
+                await ctx.send(f"❌ Error playing song: {error_message}")
+            
+            # Try to play the next song
             await self.play_next(ctx)
     
     @commands.command(name="join", help="Joins the voice channel you're in")
