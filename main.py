@@ -66,8 +66,17 @@ app.secret_key = os.environ.get("SESSION_SECRET", "discord-music-bot-secret")
 # Global variables to track bot status
 bot_thread = None
 bot_running = False
-bot_status = "Not running"
+bot_status = "Starting..."
 bot_error = None
+
+# Track playback information
+playback_info = {
+    "currently_playing": None,
+    "title": None,
+    "start_time": None,
+    "duration": None,
+    "guild_name": None
+}
 
 def run_bot():
     """Run the Discord bot in a separate thread"""
@@ -174,6 +183,33 @@ def stop_bot():
     
     return redirect(url_for('index'))
 
+@app.route('/playback_info')
+def get_playback_info():
+    """Get the current playback information as JSON"""
+    global playback_info
+    
+    # Calculate remaining time if we have start time and duration
+    remaining_time = None
+    progress_percent = 0
+    
+    if playback_info['start_time'] and playback_info['duration']:
+        import time
+        elapsed = time.time() - playback_info['start_time']
+        remaining_time = max(0, playback_info['duration'] - elapsed)
+        
+        # Calculate progress as a percentage
+        if playback_info['duration'] > 0:
+            progress_percent = min(100, (elapsed / playback_info['duration']) * 100)
+    
+    return jsonify({
+        'currently_playing': playback_info['currently_playing'],
+        'title': playback_info['title'],
+        'guild_name': playback_info['guild_name'],
+        'duration': playback_info['duration'],
+        'remaining': remaining_time,
+        'progress_percent': progress_percent
+    })
+
 @app.route('/bot_status')
 def get_bot_status():
     """Get the current status of the bot as JSON"""
@@ -182,7 +218,8 @@ def get_bot_status():
     return jsonify({
         'running': bot_running,
         'status': bot_status,
-        'error': bot_error
+        'error': bot_error,
+        'playback': get_playback_info().json
     })
 
 @app.route('/upload_cookies', methods=['GET', 'POST'])

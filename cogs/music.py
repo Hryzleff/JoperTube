@@ -92,7 +92,7 @@ class Music(commands.Cog):
         try:
             # Get audio source from YouTube
             await ctx.send(f"🔍 Searching for: {url}")
-            stream_url, title = await self.downloader.get_audio_info(url)
+            stream_url, title, duration = await self.downloader.get_audio_info(url)
             
             await ctx.send(f"🎵 Now playing: **{title}**")
             
@@ -112,6 +112,15 @@ class Music(commands.Cog):
             # Add audio filter for volume control
             audio_source = discord.PCMVolumeTransformer(audio_source, volume=0.5)
             
+            # Update playback information for the web interface
+            from main import playback_info
+            import time
+            playback_info['currently_playing'] = url
+            playback_info['title'] = title
+            playback_info['start_time'] = time.time()
+            playback_info['duration'] = duration
+            playback_info['guild_name'] = ctx.guild.name if ctx.guild else None
+            
             # Play the audio with Opus error handling
             try:
                 voice_client.play(
@@ -120,7 +129,7 @@ class Music(commands.Cog):
                         self.play_next(ctx, e), self.bot.loop
                     )
                 )
-                logger.info(f"Started playing: {title}")
+                logger.info(f"Started playing: {title} (Duration: {duration}s)")
             except discord.opus.OpusNotLoaded:
                 # Handle Opus not loaded error
                 logger.warning("Opus library not loaded - using fallback mode")
@@ -228,7 +237,7 @@ class Music(commands.Cog):
         else:
             # Get the title of the queued song
             try:
-                _, title = await self.downloader.get_audio_info(url)
+                _, title, _ = await self.downloader.get_audio_info(url)
                 position = queue.size()
                 await ctx.send(f"➕ Added to queue at position {position}: **{title}**")
             except Exception as e:
@@ -300,7 +309,7 @@ class Music(commands.Cog):
         if self.currently_playing.get(guild_id):
             try:
                 url = self.currently_playing.get(guild_id)
-                _, title = await self.downloader.get_audio_info(url)
+                _, title, _ = await self.downloader.get_audio_info(url)
                 message += f"\n▶️ **Now Playing**: {title}"
             except Exception:
                 message += f"\n▶️ **Now Playing**: {self.currently_playing.get(guild_id)}"
@@ -311,7 +320,7 @@ class Music(commands.Cog):
             queue_list = queue.get_queue()
             for i, url in enumerate(queue_list, 1):
                 try:
-                    _, title = await self.downloader.get_audio_info(url)
+                    _, title, _ = await self.downloader.get_audio_info(url)
                     message += f"\n{i}. {title}"
                 except Exception:
                     message += f"\n{i}. {url}"

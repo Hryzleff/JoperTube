@@ -66,13 +66,13 @@ class YouTubeDownloader:
     
     async def get_audio_info(self, url):
         """
-        Get the audio stream URL and title for a YouTube video
+        Get the audio stream URL, title, and duration for a YouTube video
         
         Args:
             url (str): YouTube URL or video ID
         
         Returns:
-            tuple: (stream_url, title)
+            tuple: (stream_url, title, duration)
         """
         # Run yt-dlp in a thread pool to avoid blocking
         loop = asyncio.get_event_loop()
@@ -94,7 +94,17 @@ class YouTubeDownloader:
         if not stream_url:
             raise Exception("Could not extract audio URL")
         
-        return stream_url, info.get('title', 'Unknown Title')
+        # Get title and duration
+        title = info.get('title', 'Unknown Title')
+        
+        # Duration is in seconds
+        duration = info.get('duration')
+        if not duration or not isinstance(duration, (int, float)):
+            # Default to a 3-minute duration if not available
+            duration = 180
+            logger.warning(f"Could not determine duration for {title}, using default of 3 minutes")
+        
+        return stream_url, title, duration
     
     async def search_video(self, query):
         """
